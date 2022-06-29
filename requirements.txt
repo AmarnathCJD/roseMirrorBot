@@ -5,3 +5,5 @@ dnspython
 psutil
 requests
 python-dotenv
+aiohttp
+selenium
