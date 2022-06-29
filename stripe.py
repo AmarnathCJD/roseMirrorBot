@@ -10,6 +10,7 @@ from aiohttp.web import RouteTableDef, json_response
 from aiohttp.web import Application, run_app, FileResponse
 from selenium import webdriver
 import os
+import base64
 
 routes = RouteTableDef()
 
@@ -112,10 +113,7 @@ async def stripe(request):
         img = False
     if img:
         img = browse.get_screenshot_as_png()
-        with open("screenshot.png", "wb") as f:
-            f.write(img)
-        img = "screenshot.png"
-        return FileResponse(img, headers={"Content-Type": "image/png"})
+        json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time, "img": base64.b64encode(img)})
     return json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time})
 
 PORT = int(os.environ.get("PORT", 80))
