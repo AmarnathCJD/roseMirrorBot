@@ -1,7 +1,4 @@
-import base64
-import io
 from time import time
-from requests import Response
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
@@ -10,12 +7,12 @@ import string
 import random
 import logging
 from aiohttp.web import RouteTableDef, json_response
-from aiohttp.web import Application, run_app, Response
+from aiohttp.web import Application, run_app, FileResponse
 from selenium import webdriver
+import os
 
 routes = RouteTableDef()
 
-stream = io.BytesIO()
 
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument("--headless")
@@ -66,25 +63,13 @@ async def pay(cc, exp_mo, exp_yr, cvc):
         box = browser.find_element(
             By.XPATH, "/html/body/div[1]/div[1]/div/div/div[2]/div/div[2]/div[2]/div/div/div/div[2]/div[5]/div/div/div[2]/div")
         if box.text == "Success!":
-            return "Success!", "N/A", "N/A"
+            return "Success!", "N/A", "N/A", browser
         if "." in box.text[:len(box.text) - 1]:
             return "declined", box.text[:box.text.find(".")], box.text[box.text.find(".") + 1:].strip()
-        return "declined", box.text, "N/A"
+        return "declined", box.text, "N/A", browser
     except NoSuchElementException:
         browser.set_window_size(1920, 1080)
-        screenshot = browser.get_screenshot_as_base64()
-        with io.BytesIO(base64.b64decode(screenshot)) as file:
-            file.seek(0)
-            stream.flush()
-            stream.write(file.read())
-        return "error", "N/A", "N/A"
-
-
-@routes.get("/screenshot")
-async def serve_image(request):
-    if stream.tell() == 0:
-        return Response(text="No screenshot available")
-    return Response(stream, content_type="image/png")
+        return "error", "N/A", "N/A", browser
 
 
 def gen_random_us_phone():
@@ -116,11 +101,25 @@ async def stripe(request):
         return json_response({"error": "Invalid credit card provided."})
     print("[*] Stripe payment received.")
     current_time = time()
-    stat, dcode, message = await pay(cc, exp_mo, exp_yr, cvc)
+    stat, dcode, message, browse = await pay(cc, exp_mo, exp_yr, cvc)
+    try:
+        img = request.rel_url.query["img"]
+        if img == "true":
+            img = True
+        else:
+            img = False
+    except KeyError:
+        img = False
+    if img:
+        img = browse.get_screenshot_as_png()
+        with open("screenshot.png", "wb") as f:
+            f.write(img)
+        img = "screenshot.png"
+        return FileResponse(img, headers={"Content-Type": "image/png"})
     return json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time})
 
 PORT = int(os.environ.get("PORT", 80))
 app = Application()
 app.add_routes(routes)
-logging.info("starting server on port {}".format(PORT))
+logging.info("starting server on port", PORT)
 run_app(app, port=PORT)
