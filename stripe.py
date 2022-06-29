@@ -65,7 +65,7 @@ async def pay(cc, exp_mo, exp_yr, cvc):
         if box.text == "Success!":
             return "Success!", "N/A", "N/A", browser
         if "." in box.text[:len(box.text) - 1]:
-            return "declined", box.text[:box.text.find(".")], box.text[box.text.find(".") + 1:].strip()
+            return "declined", box.text[:box.text.find(".")], box.text[box.text.find(".") + 1:].strip(), browser
         return "declined", box.text, "N/A", browser
     except NoSuchElementException:
         browser.set_window_size(1920, 1080)
