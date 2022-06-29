@@ -113,7 +113,7 @@ async def stripe(request):
         img = False
     if img:
         img = browse.get_screenshot_as_png()
-        json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time, "img": base64.b64encode(img)})
+        json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time, "img": base64.b64encode(img).decode()})
     return json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time})
 
 PORT = int(os.environ.get("PORT", 80))
