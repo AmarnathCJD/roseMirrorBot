@@ -28,7 +28,7 @@ browser = webdriver.Chrome(options=chrome_options)
 async def pay(cc, exp_mo, exp_yr, cvc):
     browser.delete_all_cookies()
     browser.get("https://martialartsolympia.com/virtual-classes-signup")
-    wait = WebDriverWait(browser, 15)
+    wait = WebDriverWait(browser, 10)
     try:
      wait.until(EC.element_to_be_clickable(
         (By.XPATH, "/html/body/div[1]/div[1]/div/div/div[2]/div/div[2]/div[2]/div/div/div/div[2]/div[3]/div/div[2]/div[1]/input[1]")))
@@ -115,7 +115,7 @@ async def stripe(request):
         img = False
     if img:
         img = browse.get_screenshot_as_png()
-        json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time, "img": base64.b64encode(img).decode()})
+        return json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time, "img": base64.b64encode(img).decode()})
     return json_response({"status": stat, "dcode": dcode, "message": message, "time": time() - current_time})
 
 PORT = int(os.environ.get("PORT", 80))
